@@ -2,7 +2,7 @@
 import {
     ContextMenu,
     ContextMenuContent,
-    ContextMenuItem,
+    ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import {Button} from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {invoke} from "@tauri-apps/api/core";
 import {ListEntriesResponse} from "@/types/listEntries";
 import {formatBytes} from "@/utils/formatByte";
 import Image from "next/image";
+import {CirclePlus, RefreshCw, Terminal, Wrench} from "lucide-react";
 
 const get_icon = (fileType: string) => {
     if (fileType.toLowerCase().includes('directory')) return "/main/folder.png";
@@ -91,10 +92,24 @@ export default function Main() {
                     <ContextMenuTrigger className={'w-full h-full absolute z-0'}
                                         onContextMenu={(e) => e.stopPropagation()}>
                     </ContextMenuTrigger>
-                    <ContextMenuContent>
-                        <ContextMenuItem>Refresh</ContextMenuItem>
-                        <ContextMenuItem>New</ContextMenuItem>
-                        <ContextMenuItem>Properties</ContextMenuItem>
+                    <ContextMenuContent className={'w-56'}>
+                        <ContextMenuItem>
+                            <RefreshCw /> Refresh
+                        </ContextMenuItem>
+                        <ContextMenuSub>
+                            <ContextMenuSubTrigger className={'gap-2'}><CirclePlus /> New</ContextMenuSubTrigger>
+                            <ContextMenuSubContent className={'w-56'}>
+                                <ContextMenuItem><Image src={'/main/folder.png'} alt={''} width={16} height={16} />Folder</ContextMenuItem>
+                                <ContextMenuItem><Image src={'/main/text.png'} alt={''} width={16} height={16} />File</ContextMenuItem>
+                                <ContextMenuItem><Image src={'/main/ms-word.png'} alt={''} width={16} height={16} />Word Document</ContextMenuItem>
+                                <ContextMenuItem><Image src={'/main/ms-excel.png'} alt={''} width={16} height={16} />Excel Document</ContextMenuItem>
+                                <ContextMenuItem><Image src={'/main/ms-powerpoint.png'} alt={''} width={16} height={16} />Powerpoint Document</ContextMenuItem>
+                            </ContextMenuSubContent>
+                        </ContextMenuSub>
+                        <ContextMenuItem><Terminal className={'text-white bg-black'} /> Open in Terminal</ContextMenuItem>
+                        <ContextMenuItem>
+                            <Wrench /> Properties
+                        </ContextMenuItem>
                     </ContextMenuContent>
                 </ContextMenu>
                 <div className={'w-full grid grid-cols-12'}>
