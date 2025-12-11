@@ -65,4 +65,12 @@ impl<T> Response<T> {
             data: None,
         }
     }
+
+    pub fn executed(message: impl Into<String>) -> Self {
+        Self {
+            code: 204,
+            message: message.into(),
+            data: None,
+        }
+    }
 }

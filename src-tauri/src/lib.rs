@@ -1,8 +1,11 @@
-use crate::view::{list_disk, list_entries, create_directory, create_file, delete_entry, get_sidebar, open_file};
+use crate::view::{
+    create_directory, create_file, delete_entry, get_sidebar, list_disk, list_entries, open_file,
+    open_in_terminal, open_with,
+};
 
-mod view;
 mod model;
 mod utils;
+mod view;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,7 +17,9 @@ pub fn run() {
             create_directory,
             create_file,
             delete_entry,
-            open_file
+            open_file,
+            open_in_terminal,
+            open_with
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

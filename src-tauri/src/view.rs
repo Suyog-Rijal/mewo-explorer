@@ -1,9 +1,11 @@
 use crate::model::{DiskInfo, EntryInfo, Response, SidebarDefault, SidebarInfo};
 use crate::utils::is_hidden_from_meta;
 use chrono::{DateTime, Local};
-use std::{env, fs};
 use std::fs::{create_dir, read_dir, File};
+use std::io::Write;
 use std::path::PathBuf;
+use std::process::Command;
+use std::{env, fs};
 use sysinfo::Disks;
 
 #[tauri::command]
@@ -84,9 +86,16 @@ pub fn get_sidebar() -> Response<SidebarInfo> {
 
 #[tauri::command]
 pub fn list_entries(path: PathBuf) -> Response<Vec<EntryInfo>> {
+    if path.is_file() {
+        let res = open_file(path.clone());
+        if res.code == 200 {
+            return Response::executed("Executed successfully");
+        }
+    }
+
     let entries = match read_dir(&path) {
         Ok(v) => v,
-        Err(_) => return Response::err(format!("Failed to read path: {}", path.display())),
+        Err(_) => return Response::err("Failed to read directory"),
     };
 
     let mut res = Vec::with_capacity(64);
@@ -144,7 +153,27 @@ pub fn create_directory(path: PathBuf, name: String) -> Response<()> {
 
 #[tauri::command]
 pub fn create_file(path: PathBuf, name: String) -> Response<()> {
-    match File::create_new(path.join(name)) {
+    let ext = match name.rfind('.') {
+        Some(i) => &name[i + 1..],
+        None => "",
+    };
+
+    let bytes: &[u8] = match ext {
+        "docx" => include_bytes!("../templates/blank.docx"),
+        "xlsx" => include_bytes!("../templates/blank.xlsx"),
+        "pptx" => include_bytes!("../templates/blank.pptx"),
+        _ => &[],
+    };
+
+    let target = path.join(&name);
+
+    let res = if bytes.is_empty() {
+        File::create_new(target).map(|_| ())
+    } else {
+        File::create(target).and_then(|mut f| f.write_all(bytes))
+    };
+
+    match res {
         Ok(_) => Response::ok(()),
         Err(_) => Response::err("Failed to create file"),
     }
@@ -173,11 +202,85 @@ pub fn delete_entry(path: PathBuf) -> Response<()> {
     }
 }
 
-
 #[tauri::command]
 pub fn open_file(path: PathBuf) -> Response<()> {
     match opener::open(path) {
         Ok(_) => Response::ok(()),
         Err(e) => Response::err(format!("Failed to open file: {}", e)),
     }
+}
+
+#[tauri::command]
+pub fn open_in_terminal(path: PathBuf) -> Result<(), String> {
+    if Command::new("cmd")
+        .args(&[
+            "/C",
+            "start",
+            "pwsh",
+            "-NoExit",
+            "-Command",
+            &format!("Set-Location -LiteralPath '{}'", path.display()),
+        ])
+        .spawn()
+        .is_ok()
+    {
+        return Ok(());
+    }
+
+    if Command::new("cmd")
+        .args(&["/C", "start", "wt", "-d", &path.to_string_lossy()])
+        .spawn()
+        .is_ok()
+    {
+        return Ok(());
+    }
+
+    if Command::new("cmd")
+        .args(&[
+            "/C",
+            "start",
+            "powershell",
+            "-NoExit",
+            "-Command",
+            &format!("Set-Location -LiteralPath '{}'", path.display()),
+        ])
+        .spawn()
+        .is_ok()
+    {
+        return Ok(());
+    }
+
+    if Command::new("cmd")
+        .args(&[
+            "/C",
+            "start",
+            "cmd",
+            "/K",
+            "cd",
+            "/d",
+            &path.to_string_lossy(),
+        ])
+        .spawn()
+        .is_ok()
+    {
+        return Ok(());
+    }
+
+    Err("Failed to open any terminal".into())
+}
+
+#[tauri::command]
+pub async fn open_with(path: PathBuf) -> Result<(), String> {
+    let p = path.clone();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        std::process::Command::new("rundll32.exe")
+            .args(["shell32.dll,OpenAs_RunDLL", p.to_string_lossy().as_ref()])
+            .spawn()
+            .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    Ok(())
 }

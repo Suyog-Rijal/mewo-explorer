@@ -2,7 +2,7 @@
 import {Button} from "@/components/ui/button";
 import {ArrowLeft, ArrowRight, ArrowUp, BookOpen, ChevronDown, CirclePlus, LaptopMinimal, RefreshCw, Search, X} from "lucide-react";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group"
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
 import usePathStore from "@/store/usePathStore";
 import {useRouter} from "next/navigation";
@@ -13,6 +13,8 @@ export const Navbar = () => {
     const [isFocused, setIsFocused] = useState(false);
     const [inputValue, setInputValue] = useState(path);
     const [searchQuery, setSearchQuery] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+
 
     const prettyPath = "   >   This PC   >   " + path.replace(/\\/g, "   >   ") + "   ";
 
@@ -25,6 +27,7 @@ export const Navbar = () => {
             setPath(inputValue);
             router.push(`/main?path=${encodeURIComponent(inputValue)}`);
             setIsFocused(false);
+            inputRef.current?.blur();
         }
     };
 
@@ -48,6 +51,7 @@ export const Navbar = () => {
                     <InputGroup className={'bg-white'}>
                         <InputGroupInput
                             type="text"
+                            ref={inputRef}
                             value={isFocused ? inputValue : prettyPath}
                             onChange={(e) => setInputValue(e.target.value)}
                             onFocus={() => setIsFocused(true)}
