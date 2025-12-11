@@ -172,3 +172,12 @@ pub fn delete_entry(path: PathBuf) -> Response<()> {
         Err(e) => Response::err(format!("Failed to delete: {}", e)),
     }
 }
+
+
+#[tauri::command]
+pub fn open_file(path: PathBuf) -> Response<()> {
+    match opener::open(path) {
+        Ok(_) => Response::ok(()),
+        Err(e) => Response::err(format!("Failed to open file: {}", e)),
+    }
+}

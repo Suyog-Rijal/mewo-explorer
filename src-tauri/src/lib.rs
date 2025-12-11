@@ -1,4 +1,4 @@
-use crate::view::{list_disk, list_entries, create_directory, create_file, delete_entry, get_sidebar};
+use crate::view::{list_disk, list_entries, create_directory, create_file, delete_entry, get_sidebar, open_file};
 
 mod view;
 mod model;
@@ -13,7 +13,8 @@ pub fn run() {
             list_entries,
             create_directory,
             create_file,
-            delete_entry
+            delete_entry,
+            open_file
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

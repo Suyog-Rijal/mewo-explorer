@@ -4,7 +4,6 @@ import {Progress} from "@/components/ui/progress";
 import {useEffect, useState} from "react";
 import {DiskInfoResponse} from "@/types/diskInfo";
 import {invoke} from "@tauri-apps/api/core";
-import Link from "next/link";
 import {formatBytes} from "@/utils/formatByte";
 import {useRouter} from "next/navigation";
 import usePathStore from "@/store/usePathStore";
