@@ -11,7 +11,7 @@ type SidebarLinkProps = {
 
 export const SidebarLink = ({ l, m, r, href, className }: SidebarLinkProps) => {
     return (
-        <Link href={href} className={`flex items-center border border-transparent gap-2 text-sm py-2 px-4 hover:bg-blue-100 transition-colors duration-200 ${className ?? ""}`}>
+        <Link href={href} className={`flex items-center border border-transparent gap-2 text-xs py-2 px-4 hover:bg-blue-100 transition-colors duration-200 ${className ?? ""}`}>
             {l && <div>{l}</div>}
             <div>{m}</div>
             {r && <div className="ml-auto">{r}</div>}

@@ -1,46 +1,61 @@
 "use client";
 import {Button} from "@/components/ui/button";
-import {
-    ArrowLeft,
-    ArrowRight,
-    ArrowUp, BookOpen,
-    ChevronDown,
-    CirclePlus,
-    LaptopMinimal,
-    RefreshCw,
-    Search,
-    X
-} from "lucide-react";
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-} from "@/components/ui/input-group"
-import {useState} from "react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import {ArrowLeft, ArrowRight, ArrowUp, BookOpen, ChevronDown, CirclePlus, LaptopMinimal, RefreshCw, Search, X} from "lucide-react";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group"
+import {useState, useEffect} from "react";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
+import usePathStore from "@/store/usePathStore";
+import {useRouter} from "next/navigation";
 
 export const Navbar = () => {
+    const router = useRouter();
+    const { path, setPath } = usePathStore();
+    const [isFocused, setIsFocused] = useState(false);
+    const [inputValue, setInputValue] = useState(path);
     const [searchQuery, setSearchQuery] = useState("");
-    const [currentPath, setCurrentPath] = useState("");
 
+    const prettyPath = "   >   This PC   >   " + path.replace(/\\/g, "   >   ") + "   ";
+
+    useEffect(() => {
+        if (!isFocused) setInputValue(path);
+    }, [path, isFocused]);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            setPath(inputValue);
+            router.push(`/main?path=${encodeURIComponent(inputValue)}`);
+            setIsFocused(false);
+        }
+    };
 
     return (
         <section className={'w-full'}>
             <section className={'flex px-4 py-1 justify-center items-center gap-4 bg-zinc-50'}>
                 <div className={' flex justify-center items-center gap-4'}>
-                    <Button className={'text-zinc-500 font-normal'}><ArrowLeft size={100} /></Button>
-                    <Button className={'text-zinc-500 font-normal'}><ArrowRight /></Button>
+                    <Button className={'text-zinc-500 font-normal'} onClick={() => {
+                        if (path == "") return;
+                        router.back();
+                    }}><ArrowLeft /></Button>
+                    <Button className={'text-zinc-500 font-normal'} onClick={() => {
+                        router.forward()
+                    }}><ArrowRight /></Button>
                     <Button className={'text-zinc-500 font-normal'}><ArrowUp /></Button>
-                    <Button className={'text-zinc-500 font-normal'}><RefreshCw /></Button>
+                    <Button className={'text-zinc-500 font-normal'} onClick={() => {
+                        router.push(`/main?path=${encodeURIComponent(path)}&temp=${Date.now()}`);
+                    }}><RefreshCw /></Button>
                 </div>
                 <div className={'flex-1'}>
                     <InputGroup className={'bg-white'}>
-                        <InputGroupInput value={currentPath} onChange={(e) => setCurrentPath(e.target.value)} className={'truncate !text-sm'} type="text" placeholder="This PC" />
+                        <InputGroupInput
+                            type="text"
+                            value={isFocused ? inputValue : prettyPath}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
+                            onKeyDown={handleKeyDown}
+                            className={`truncate ${isFocused ? "text-zinc-800" : "text-zinc-500"}`}
+                            placeholder="This PC"
+                        />
                         <InputGroupAddon>
                             <LaptopMinimal />
                         </InputGroupAddon>
@@ -82,5 +97,3 @@ export const Navbar = () => {
         </section>
     )
 }
-
-
