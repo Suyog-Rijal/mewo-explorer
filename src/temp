@@ -5,7 +5,7 @@ import {
     ArrowRight,
     ArrowUp,
     BookOpen,
-    ChevronDown, ChevronRight,
+    ChevronDown,
     CirclePlus, ClipboardPaste, Copy, FolderPen,
     LaptopMinimal,
     RefreshCw, Scissors,
@@ -28,13 +28,11 @@ export const Navbar = () => {
     const [inputValue, setInputValue] = useState(path);
     const [searchQuery, setSearchQuery] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
-    const pathList = path.split("\\").filter(Boolean);
 
+
+    const prettyPath = "   >   This PC   >   " + path.replace(/\\/g, "   >   ") + "   ";
 
     useEffect(() => {
-        if (isFocused) {
-            inputRef.current?.focus();
-        }
         if (!isFocused) setInputValue(path);
     }, [path, isFocused]);
 
@@ -66,41 +64,18 @@ export const Navbar = () => {
 
 
                 <div className={'flex-1'}>
-                    <InputGroup className={'bg-white overflow-hidden'}>
-                        {
-                            isFocused ? (
-                                <InputGroupInput
-                                    type="text"
-                                    ref={inputRef}
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    onBlur={() => setIsFocused(false)}
-                                    onKeyDown={handleKeyDown}
-                                    className={`truncate text-zinc-800`}
-                                />
-                            ) : (
-                                <div className={'w-full h-full flex justify-center items-center'}>
-                                    <div className={'flex space-x-2 text-zinc-500 items-center justify-center'}>
-                                        <div className={'ml-3'}><ChevronRight size={18} /></div>
-                                        <Button className={'p-1 !h-auto bg-transparent text-zinc-500 hover:bg-zinc-100'} onClick={() => router.push("/")}>This PC</Button>
-                                        {pathList?.map((each, index) => (
-                                            <div key={index} className={'flex gap-2 items-center justify-center'}>
-                                                <div><ChevronRight size={18} /></div>
-                                                <Button className={'p-1 !h-auto bg-transparent text-zinc-500 hover:bg-zinc-100'} onClick={() => {
-                                                    const newPath = pathList.slice(0, index + 1).join("\\");
-                                                    if (newPath.includes(":")) {
-                                                        router.push(`/main?path=${encodeURIComponent(newPath + "\\")}`);
-                                                    }
-                                                }}>{each.includes(":") ? `Drive (${each.split(":")[0]})` : each}</Button>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className={'flex-1 flex h-full'} onClick={() => {
-                                        setIsFocused(true);}}></div>
-                                </div>
-                            )
-                        }
+                    <InputGroup className={'bg-white'}>
+                        <InputGroupInput
+                            type="text"
+                            ref={inputRef}
+                            value={isFocused ? inputValue : prettyPath}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
+                            onKeyDown={handleKeyDown}
+                            className={`truncate ${isFocused ? "text-zinc-800" : "text-zinc-500"}`}
+                            placeholder="This PC"
+                        />
                         <InputGroupAddon>
                             <LaptopMinimal/>
                         </InputGroupAddon>
