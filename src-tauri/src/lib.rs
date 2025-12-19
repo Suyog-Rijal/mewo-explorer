@@ -1,6 +1,6 @@
 use crate::view::{
     create_directory, create_file, delete_entry, get_sidebar, list_disk, list_entries, open_file,
-    open_in_terminal, open_with,
+    open_in_terminal, open_with, search
 };
 
 mod model;
@@ -19,7 +19,8 @@ pub fn run() {
             delete_entry,
             open_file,
             open_in_terminal,
-            open_with
+            open_with,
+            search
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

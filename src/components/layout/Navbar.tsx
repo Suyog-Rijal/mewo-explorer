@@ -20,15 +20,16 @@ import {useRouter} from "next/navigation";
 import {ContextMenuItem} from "@/components/ui/context-menu";
 import Image from "next/image";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
+import useSearchStore from "@/store/useSearchStore";
 
 export const Navbar = () => {
     const router = useRouter();
     const {path, setPath} = usePathStore();
     const [isFocused, setIsFocused] = useState(false);
     const [inputValue, setInputValue] = useState(path);
-    const [searchQuery, setSearchQuery] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
     const pathList = path.split("\\").filter(Boolean);
+    const {searchKeyword, setSearchKeyword} = useSearchStore();
 
 
     useEffect(() => {
@@ -111,12 +112,12 @@ export const Navbar = () => {
                 </div>
                 <div className={'w-40 lg:w-96'}>
                     <InputGroup className={'bg-white'}>
-                        <InputGroupInput className={'truncate !text-sm'} value={searchQuery}
-                                         onChange={(e) => setSearchQuery(e.target.value)} type="text"
+                        <InputGroupInput className={'truncate !text-sm'} value={searchKeyword}
+                                         onChange={(e) => setSearchKeyword(e.target.value)} type="text"
                                          placeholder="Search This PC"/>
                         <InputGroupAddon align={'inline-end'}>
                             {
-                                searchQuery ? <X className={'cursor-pointer'} onClick={() => setSearchQuery("")}/> :
+                                searchKeyword ? <X className={'cursor-pointer'} onClick={() => setSearchKeyword("")}/> :
                                     <Search/>
                             }
                         </InputGroupAddon>

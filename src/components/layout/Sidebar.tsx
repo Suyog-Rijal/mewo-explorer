@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 
 export const Sidebar = () => {
     const [sidebar, setSidebar] = useState<SidebarInfoResponse>();
-    const [accordionValue, setAccordionValue] = useState<string>("");
+    const [accordionValue, setAccordionValue] = useState<string>("item-1");
     const router = useRouter();
     const clickTimer = useRef<number | null>(null);
 
@@ -60,7 +60,7 @@ export const Sidebar = () => {
             <div className={'border border-zinc-200/60 mx-4 my-4'}></div>
 
             <section>
-                <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue}>
+                <Accordion type="single" defaultValue={'item-1'} collapsible value={accordionValue} onValueChange={setAccordionValue}>
                     <AccordionItem value="item-1">
                         <AccordionTrigger
                             onClick={handleAccordionClick}

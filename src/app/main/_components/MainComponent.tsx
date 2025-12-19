@@ -29,6 +29,7 @@ import {
 import {create_directory, create_file} from "@/utils/createNew";
 import {open_in_terminal} from "@/utils/openInTerminal";
 import {delete_entry} from "@/utils/deleteEntry";
+import useSearchStore from "@/store/useSearchStore";
 
 const get_icon = (fileType: string) => {
     if (fileType.toLowerCase().includes('directory')) return "/main/folder.png";
@@ -55,6 +56,7 @@ export const MainComponent = () => {
     const {path, setPath} = usePathStore();
     const router = useRouter();
     const [activePath, setActivePath] = useState<string | null>(null);
+    const {searchKeyword} = useSearchStore();
     const [newItem, setNewItem] = useState<{
         type: 'dir' | 'file' | 'word' | 'excel' | 'ppt';
         dummyName: string;
@@ -81,6 +83,29 @@ export const MainComponent = () => {
             })
             .catch(console.log);
     }, [path, temp]);
+
+    useEffect(() => {
+        if (searchKeyword.trim() === '') {
+            invoke('list_entries', {path})
+                .then((res) => {
+                    const response = res as ListEntriesResponse;
+                    if (!response || response.code === 500) return setEntries(undefined);
+                    if (response.code == 204) router.back();
+                    if (response.code === 200 && response.data != null) {
+                        const sorted = response.data.sort((a, b) => {
+                            if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+                            return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+                        });
+                        setEntries({...response, data: sorted});
+                    } else setEntries({...response, data: []});
+                })
+                .catch(console.log);
+            return;
+        }
+
+        // invoke('search', {path: path, keyword: searchKeyword.trim()})
+
+    }, [searchKeyword]);
 
     const open_file = (filePath: string) => {
         invoke('open_file', {path: filePath}).catch((err) => console.error('Error opening file:', err));

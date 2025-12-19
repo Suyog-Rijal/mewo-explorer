@@ -284,3 +284,54 @@ pub async fn open_with(path: PathBuf) -> Result<(), String> {
 
     Ok(())
 }
+
+
+#[tauri::command]
+pub fn search(path: PathBuf, keyword: String) -> Response<Vec<EntryInfo>> {
+    let mut res = Vec::new();
+
+    fn helper(path: &PathBuf, keyword: &str, res: &mut Vec<EntryInfo>) {
+        if let Ok(entries) = read_dir(path) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+                if file_name.contains(keyword) {
+                    let metadata = match entry.metadata() {
+                        Ok(v) => v,
+                        Err(e) => continue,
+                    };
+                    let is_file = metadata.is_file();
+                    let is_dir = metadata.is_dir();
+                    let size = if is_file { metadata.len() } else { 0 };
+                    let modified = match metadata.modified() {
+                        Ok(st) => {
+                            let dt: DateTime<Local> = st.into();
+                            dt.format("%Y-%m-%d %H:%M:%S").to_string()
+                        }
+                        Err(_) => "Unknown".to_string(),
+                    };
+                    let is_hidden = is_hidden_from_meta(&metadata);
+
+                    res.push(EntryInfo {
+                        name: file_name.to_string(),
+                        path: path.clone(),
+                        content_type: if is_file { "file".to_string() } else { "dir".to_string() },
+                        is_file,
+                        is_dir,
+                        is_hidden,
+                        size,
+                        modified,
+                    });
+                }
+
+                if path.is_dir() {
+                    helper(&path, keyword, res);
+                }
+            }
+        }
+    }
+
+    helper(&path, &keyword, &mut res);
+    Response::ok(res)
+}
