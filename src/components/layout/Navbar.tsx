@@ -21,6 +21,9 @@ import {ContextMenuItem} from "@/components/ui/context-menu";
 import Image from "next/image";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import useSearchStore from "@/store/useSearchStore";
+import { listen } from '@tauri-apps/api/event';
+import {AlertMessage} from "@/types/alertMessage";
+
 
 export const Navbar = () => {
     const router = useRouter();
@@ -30,7 +33,8 @@ export const Navbar = () => {
     const inputRef = useRef<HTMLInputElement>(null);
     const pathList = path.split("\\").filter(Boolean);
     const {searchKeyword, setSearchKeyword} = useSearchStore();
-
+    let searchRef = useRef<HTMLInputElement>(null);
+    const [isIndexing, setIsIndexing] = useState(false);
 
     useEffect(() => {
         if (isFocused) {
@@ -38,6 +42,38 @@ export const Navbar = () => {
         }
         if (!isFocused) setInputValue(path);
     }, [path, isFocused]);
+
+    useEffect(() => {
+        console.log("Listening for indexing alerts...");
+        const unlistenPromise = listen<AlertMessage>('indexAlert', (event) => {
+            const { alert_type, message } = event.payload;
+            if (alert_type === "info") setIsIndexing(true);
+            if (alert_type === "success" || alert_type === "error") setIsIndexing(false);
+        });
+        return () => {
+            unlistenPromise.then((f) => f());
+        };
+    }, []);
+
+    useEffect(() => {
+        handleIndexingAlert();
+    }, [isIndexing]);
+
+    const handleIndexingAlert = () => {
+        if (isIndexing) {
+            if (searchRef.current) {
+                searchRef.current.disabled = true;
+                setSearchKeyword("");
+                searchRef.current.placeholder = "Indexing in progress.....";
+            }
+        }
+        else {
+            if (searchRef.current) {
+                searchRef.current.disabled = false;
+                searchRef.current.placeholder = "Search This PC";
+            }
+        }
+    }
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
@@ -112,7 +148,7 @@ export const Navbar = () => {
                 </div>
                 <div className={'w-40 lg:w-96'}>
                     <InputGroup className={'bg-white'}>
-                        <InputGroupInput className={'truncate !text-sm'} value={searchKeyword}
+                        <InputGroupInput ref={searchRef} className={'truncate !text-sm'} value={searchKeyword}
                                          onChange={(e) => setSearchKeyword(e.target.value)} type="text"
                                          placeholder="Search This PC"/>
                         <InputGroupAddon align={'inline-end'}>

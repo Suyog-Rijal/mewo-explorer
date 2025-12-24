@@ -85,7 +85,7 @@ export const MainComponent = () => {
     }, [path, temp]);
 
     useEffect(() => {
-        if (searchKeyword.trim() === '') {
+        if (searchKeyword.trim() == '') {
             invoke('list_entries', {path})
                 .then((res) => {
                     const response = res as ListEntriesResponse;
@@ -103,7 +103,22 @@ export const MainComponent = () => {
             return;
         }
 
-        // invoke('search', {path: path, keyword: searchKeyword.trim()})
+        invoke('search', {pth: path, keyword: searchKeyword.trim()})
+            .then((res) => {
+                const response = res as ListEntriesResponse;
+                if (!response || response.code === 500) return setEntries(undefined);
+                if (response.code == 204) router.back();
+                if (response.code === 200 && response.data != null) {
+                    console.log(response.data);
+                    const sorted = response.data.sort((a, b) => {
+                        if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+                        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+                    });
+                    setEntries({...response, data: sorted});
+                } else setEntries({...response, data: []});
+            })
+            .catch(console.log);
+        return;
 
     }, [searchKeyword]);
 

@@ -1,4 +1,4 @@
-use crate::model::{DiskInfo, EntryInfo, Response, SidebarDefault, SidebarInfo};
+use crate::model::{AlertPayload, AlertType, DiskInfo, EntryInfo, Response, SidebarDefault, SidebarInfo};
 use crate::utils::is_hidden_from_meta;
 use chrono::{DateTime, Local};
 use std::fs::{create_dir, read_dir, File};
@@ -7,6 +7,9 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::{env, fs};
 use sysinfo::Disks;
+use crate::indexer::index_search;
+use tauri::{AppHandle, Emitter};
+
 
 #[tauri::command]
 pub fn list_disk() -> Response<Vec<DiskInfo>> {
@@ -287,51 +290,61 @@ pub async fn open_with(path: PathBuf) -> Result<(), String> {
 
 
 #[tauri::command]
-pub fn search(path: PathBuf, keyword: String) -> Response<Vec<EntryInfo>> {
-    let mut res = Vec::new();
+pub fn search(pth: PathBuf, keyword: String) -> Response<Vec<EntryInfo>> {
+    println!("pth: {:?}, keyword: {}", pth, keyword);
+    let res = index_search(pth.to_str().unwrap_or_default(), &keyword);
+    let mut results = Vec::new();
+    for each in res {
+        let path = PathBuf::from(each);
+        let meta = match fs::metadata(&path) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
 
-    fn helper(path: &PathBuf, keyword: &str, res: &mut Vec<EntryInfo>) {
-        if let Ok(entries) = read_dir(path) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        let file_name = path.file_name().unwrap().to_string_lossy().to_string();
+        let is_hidden = is_hidden_from_meta(&meta);
+        let is_dir = meta.is_dir();
 
-                if file_name.contains(keyword) {
-                    let metadata = match entry.metadata() {
-                        Ok(v) => v,
-                        Err(e) => continue,
-                    };
-                    let is_file = metadata.is_file();
-                    let is_dir = metadata.is_dir();
-                    let size = if is_file { metadata.len() } else { 0 };
-                    let modified = match metadata.modified() {
-                        Ok(st) => {
-                            let dt: DateTime<Local> = st.into();
-                            dt.format("%Y-%m-%d %H:%M:%S").to_string()
-                        }
-                        Err(_) => "Unknown".to_string(),
-                    };
-                    let is_hidden = is_hidden_from_meta(&metadata);
-
-                    res.push(EntryInfo {
-                        name: file_name.to_string(),
-                        path: path.clone(),
-                        content_type: if is_file { "file".to_string() } else { "dir".to_string() },
-                        is_file,
-                        is_dir,
-                        is_hidden,
-                        size,
-                        modified,
-                    });
+        results.push(EntryInfo {
+            name: file_name,
+            path: path.clone(),
+            content_type: if is_dir {
+                "Directory".to_string()
+            } else {
+                match path.extension().and_then(|s| s.to_str()) {
+                    Some(ext) => ext.to_string(),
+                    None => "Unknown".to_string(),
                 }
-
-                if path.is_dir() {
-                    helper(&path, keyword, res);
+            },
+            is_file: meta.is_file(),
+            is_dir: meta.is_dir(),
+            is_hidden,
+            size: meta.len(),
+            modified: match meta.modified() {
+                Ok(st) => {
+                    let dt: DateTime<Local> = st.into();
+                    dt.format("%Y-%m-%d %H:%M:%S").to_string()
                 }
-            }
-        }
+                Err(_) => "Unknown".to_string(),
+            },
+        });
     }
+    Response::ok(results)
+}
 
-    helper(&path, &keyword, &mut res);
-    Response::ok(res)
+
+pub fn alert(event: &str, app: &AppHandle, alert_type: AlertType, message: &str) {
+    let payload = AlertPayload {
+        alert_type: match alert_type {
+            AlertType::Success => "success".to_string(),
+            AlertType::Error => "error".to_string(),
+            AlertType::Message => "message".to_string(),
+            AlertType::Info => "info".to_string(),
+            _ => "unknown".to_string(),
+        },
+        message: message.to_string(),
+    };
+    println!("Emitting alert: {:?}", payload);
+
+    app.emit(event, payload).unwrap();
 }

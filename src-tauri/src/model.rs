@@ -74,3 +74,20 @@ impl<T> Response<T> {
         }
     }
 }
+
+#[derive(Serialize)]
+
+pub enum AlertType {
+    Success,
+    Error,
+    Info,
+    Warning,
+    Message,
+}
+
+#[derive(Serialize, Debug)]
+#[derive(Clone)]
+pub struct AlertPayload {
+    pub(crate) alert_type: String,
+    pub(crate) message: String,
+}
